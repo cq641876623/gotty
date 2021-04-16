@@ -4,6 +4,7 @@ import com.roro.gotty.base.dispatchEvent.Event;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
@@ -29,13 +30,16 @@ public class AcceptSocket implements Runnable {
             SocketChannel clientChannel = ssc.accept();
             clientChannel.socket().setSoTimeout(3000);
             clientChannel.configureBlocking(false);
-            synchronized (event.getSelectionKey().selector().wakeup() ){
+            Selector selector=event.getSelectionKey().selector();
+            synchronized (selector.wakeup() ){
 
-                clientChannel.register(event.getSelectionKey().selector(), SelectionKey.OP_READ);
+                clientChannel.register(selector, SelectionKey.OP_READ);
                 System.out.println("a new client connected "+clientChannel.getRemoteAddress());
                 event.getSelectionKey().interestOps( event.getSelectionKey().interestOps() | (SelectionKey.OP_ACCEPT) );
-                event.getSelectionKey().selector().notifyAll();
+
+                selector.notifyAll();
             }
+
         } catch (Exception e) {
             log.error("接入socket出错：{}",e);
             e.printStackTrace();

@@ -32,6 +32,7 @@ public class Gotty implements Server,Runnable{
     private ServerSocketChannel server;
 
     private Selector selector;
+    private Selector acceptSelector;
 
     private Dispatcher dispatcher;
 
@@ -64,7 +65,9 @@ public class Gotty implements Server,Runnable{
             server.socket().bind(new InetSocketAddress(this.port));
             server.configureBlocking(false);
             selector=Selector.open();
+            acceptSelector=Selector.open();
             server.register(selector, SelectionKey.OP_ACCEPT);
+
         } catch (IOException e) {
             log.error("nio服务open失败!端口号：{} 异常：{}",port,e);
             e.printStackTrace();
@@ -107,6 +110,7 @@ public class Gotty implements Server,Runnable{
                 if(n==0){
                     synchronized (selector){
                         selector.wait(1);
+                        continue;
                     }
                 }
                 Iterator<SelectionKey> it = selector.selectedKeys().iterator();
@@ -117,6 +121,7 @@ public class Gotty implements Server,Runnable{
 
                     switch (event.getEventType()){
                         case EventType.ACCEPT:
+//                            new AcceptSocket(event).run();
                             if(!getIOExecutor().isShutdown())
                             getIOExecutor().submit(new AcceptSocket(event));
                             break;
